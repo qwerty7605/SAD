@@ -1,9 +1,9 @@
 services:
-  student-portal:
+  mis-portal:
     build:
       context: .
     ports:
-      - "4200:4200"
+      - "4202:4200"
     volumes:
       - .:/app
       - /app/node_modules

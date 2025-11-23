@@ -4,13 +4,15 @@ A comprehensive online clearance management system for Leytre Normal University,
 
 ## Project Architecture
 
-This system implements a **multi-portal architecture** with three separate frontend applications connecting to a single Laravel backend API. This approach ensures:
+This system implements a **multi-portal architecture** with three separate Angular frontend applications connecting to a single Laravel backend API. This approach ensures:
 
 - **Separation of Concerns**: Each portal is isolated with its own codebase and deployment
 - **Load Distribution**: Traffic is distributed across multiple frontend servers
 - **Independent Scaling**: Each portal can be scaled independently based on usage patterns
 - **Role-Based Access**: Clear separation between student, organization admin, and MIS functionalities
 - **Maintainability**: Changes to one portal don't affect others
+- **Consistent Technology Stack**: All portals use Angular for easier knowledge sharing and code reusability
+- **Shared Components**: Common UI components and services can be shared across portals via Angular libraries
 
 ### System Overview
 
@@ -119,15 +121,70 @@ Web Dev/
 
 ## Getting Started
 
+You can run this project in two ways:
+1. **Docker** (Recommended - easiest setup)
+2. **Manual Installation** (Traditional development setup)
+
 ### Prerequisites
 
-- **Node.js** (v18+) for frontend portals
+#### Option 1: Docker (Recommended)
+- **Docker** (v20.10+)
+- **Docker Compose** (v2.0+)
+
+#### Option 2: Manual Installation
+- **Node.js** (v18+) for all Angular frontend portals
 - **PHP** (v8.1+) for Laravel backend
 - **Composer** for PHP dependencies
 - **MySQL** (v8.0+) for database
-- **Angular CLI** for Student Portal
+- **Angular CLI** (v17+) for all three Angular portals
 
 ### Installation
+
+#### Option 1: Using Docker (Recommended)
+
+**Quick Start - Run Everything:**
+```bash
+# From the project root directory
+docker-compose up -d
+```
+
+This single command starts all services:
+- Student Portal: http://localhost:4200
+- OrgAdmin Portal: http://localhost:4201
+- MIS Portal: http://localhost:4202
+- Laravel API: http://localhost:8000
+- MySQL Database: localhost:3306
+- phpMyAdmin: http://localhost:8080
+
+**Setup Laravel (first time only):**
+```bash
+docker-compose exec laravel bash
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan db:seed
+exit
+```
+
+**Common Docker Commands:**
+```bash
+# Start all services
+docker-compose up -d
+
+# Stop all services
+docker-compose down
+
+# View logs
+docker-compose logs -f
+
+# Rebuild services
+docker-compose build
+```
+
+See [DOCKER_GUIDE.md](DOCKER_GUIDE.md) for complete Docker documentation.
+
+#### Option 2: Manual Installation
 
 #### 1. Backend Setup (Laravel)
 
@@ -241,10 +298,10 @@ Configure `.env` file:
 ```env
 APP_URL=http://localhost:8000
 FRONTEND_STUDENT_URL=http://localhost:4200
-FRONTEND_ORGADMIN_URL=http://localhost:3001
-FRONTEND_MIS_URL=http://localhost:3002
+FRONTEND_ORGADMIN_URL=http://localhost:4201
+FRONTEND_MIS_URL=http://localhost:4202
 
-CORS_ALLOWED_ORIGINS=http://localhost:4200,http://localhost:3001,http://localhost:3002
+CORS_ALLOWED_ORIGINS=http://localhost:4200,http://localhost:4201,http://localhost:4202
 ```
 
 ## Development Workflow
@@ -260,10 +317,10 @@ CORS_ALLOWED_ORIGINS=http://localhost:4200,http://localhost:3001,http://localhos
 ### Production Deployment Strategy
 
 1. **Backend**: Deploy Laravel to a web server (e.g., DigitalOcean, AWS EC2)
-2. **Frontend Portals**: Build and deploy each portal separately
+2. **Frontend Portals**: Build and deploy each Angular portal separately
    - Student Portal: `ng build --configuration production`
-   - OrgAdmin Portal: `npm run build`
-   - MIS Portal: `npm run build`
+   - OrgAdmin Portal: `ng build --configuration production`
+   - MIS Portal: `ng build --configuration production`
 3. **Database**: Set up MySQL on a separate server or managed service
 4. **Domain Structure**:
    - API: `api.lnu-clearance.edu.ph`
@@ -315,11 +372,11 @@ ng test
 
 # OrgAdmin Portal
 cd OrgAdmin-Portal
-npm test
+ng test
 
 # MIS Portal
 cd MIS-Portal
-npm test
+ng test
 ```
 
 ## Troubleshooting
