@@ -1,0 +1,41 @@
+<aside class="sidebar" [class.open]="isOpen()">
+  <nav class="sidebar-nav">
+    @for (item of menuItems; track item.label) {
+      @if (item.route) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          class="nav-item"
+        >
+          <span class="nav-icon">{{ item.icon }}</span>
+          <span class="nav-label">{{ item.label }}</span>
+        </a>
+      } @else if (item.children) {
+        <div class="nav-group">
+          <button
+            class="nav-item expandable"
+            (click)="toggleExpand(item.label)"
+            [class.expanded]="isExpanded(item.label)"
+          >
+            <span class="nav-icon">{{ item.icon }}</span>
+            <span class="nav-label">{{ item.label }}</span>
+            <span class="expand-arrow">{{ isExpanded(item.label) ? '▼' : '▶' }}</span>
+          </button>
+          @if (isExpanded(item.label)) {
+            <div class="nav-children">
+              @for (child of item.children; track child.label) {
+                <a
+                  [routerLink]="child.route"
+                  routerLinkActive="active"
+                  class="nav-child"
+                >
+                  <span class="child-label">{{ child.label }}</span>
+                </a>
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+  </nav>
+</aside>

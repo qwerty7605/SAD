@@ -1,0 +1,58 @@
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <div class="header-content">
+      <div class="greeting-section">
+        <h1>Dashboard</h1>
+        <div class="welcome-info">
+          <p class="welcome-text">Welcome, <span class="user-name">{{ currentUser?.full_name || 'Organization Admin' }}</span></p>
+          <p class="position-text">{{ currentUser?.position }}</p>
+          <p class="organization-name">{{ currentUser?.organization_name }}</p>
+          <p class="department-text" *ngIf="currentUser?.department">{{ currentUser?.department }} Department</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading" *ngIf="isLoading">
+    <p>Loading statistics...</p>
+  </div>
+
+  <div class="statistics-grid" *ngIf="!isLoading">
+    <div class="stat-card total" (click)="viewAllClearances()">
+      <div class="stat-icon">👥</div>
+      <div class="stat-content">
+        <h3>Total Students</h3>
+        <p class="stat-number">{{ statistics.total }}</p>
+        <p class="stat-action">Click to view all</p>
+      </div>
+    </div>
+
+    <div class="stat-card pending" (click)="viewPendingClearances()">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-content">
+        <h3>Pending Review</h3>
+        <p class="stat-number">{{ statistics.pending }}</p>
+        <p class="stat-action">Click to review</p>
+      </div>
+    </div>
+
+    <div class="stat-card approved" (click)="viewApprovedClearances()">
+      <div class="stat-icon">✅</div>
+      <div class="stat-content">
+        <h3>Approved</h3>
+        <p class="stat-number">{{ statistics.approved }}</p>
+        <p class="stat-action">Click to view</p>
+      </div>
+    </div>
+
+    <div class="stat-card needs-compliance" (click)="viewNeedsComplianceClearances()">
+      <div class="stat-icon">❌</div>
+      <div class="stat-content">
+        <h3>Needs Compliance</h3>
+        <p class="stat-number">{{ statistics.needs_compliance }}</p>
+        <p class="stat-action">Click to view</p>
+      </div>
+    </div>
+  </div>
+
+</div>

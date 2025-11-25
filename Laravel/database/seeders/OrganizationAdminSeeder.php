@@ -29,14 +29,14 @@ class OrganizationAdminSeeder extends Seeder
             ],
             [
                 'admin_id' => 4,
-                'org_id' => 3, // AOA
+                'org_id' => 3, // DIGITS - Adviser
                 'position' => 'Academic Organization Adviser',
                 'full_name' => 'Prof. Carlos Fernandez',
                 'is_active' => true,
             ],
             [
                 'admin_id' => 5,
-                'org_id' => 4, // AOT
+                'org_id' => 3, // DIGITS - Treasurer
                 'position' => 'Academic Organization Treasurer',
                 'full_name' => 'Mrs. Linda Ramos',
                 'is_active' => true,

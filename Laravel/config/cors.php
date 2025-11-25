@@ -20,7 +20,10 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        'http://localhost:4200',
+        'http://localhost:4200',  // Student Portal
+        'http://localhost:4201',  // OrgAdmin Portal
+        'http://localhost:4202',  // MIS Portal
+        'http://laravel-nginx-1',  // Allow requests from containers on same network
     ],
 
     'allowed_origins_patterns' => [],

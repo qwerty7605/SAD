@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
             StudentSeeder::class,
             OrganizationAdminSeeder::class,
             SystemAdminSeeder::class,
+            StudentClearanceSeeder::class,
+            ClearanceItemSeeder::class,
         ]);
     }
 }

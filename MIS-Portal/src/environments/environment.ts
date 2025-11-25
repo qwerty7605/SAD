@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8000'  // Laravel backend API URL
+  apiUrl: 'http://localhost'  // Laravel backend via Nginx (port 80)
 };

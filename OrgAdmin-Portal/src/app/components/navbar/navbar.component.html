@@ -1,0 +1,25 @@
+<nav class="navbar">
+  <div class="navbar-container">
+    <div class="navbar-brand">
+      <h1>LNU Clearance</h1>
+      <span class="portal-label">OrgAdmin Portal</span>
+    </div>
+
+    <button class="menu-toggle" (click)="toggleMenu()">
+      <span>☰</span>
+    </button>
+
+    <div class="navbar-menu" [class.active]="isMenuOpen">
+      <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
+        Dashboard
+      </a>
+
+      <div class="navbar-user">
+        <span class="user-name">{{ currentUser()?.full_name || 'Admin' }}</span>
+        <button class="btn-logout" (click)="logout()">
+          Logout
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>

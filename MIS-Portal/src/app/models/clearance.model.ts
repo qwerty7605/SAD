@@ -1,45 +1,63 @@
-/**
- * Clearance Model - Represents a clearance record
- */
-
 export interface Clearance {
-  id: number;
-  student_id: number;
-  organization_id: number;
-  status: ClearanceStatus;
-  remarks?: string;
-  submitted_at?: string;
-  reviewed_at?: string;
-  reviewer_id?: number;
-  documents?: ClearanceDocument[];
-  created_at: string;
-  updated_at: string;
-}
-
-export enum ClearanceStatus {
-  PENDING = 'pending',
-  SUBMITTED = 'submitted',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-  CONDITIONALLY_APPROVED = 'conditionally_approved'
-}
-
-export interface ClearanceDocument {
-  id: number;
   clearance_id: number;
-  file_name: string;
-  file_path: string;
-  file_type: string;
-  uploaded_at: string;
+  student_id: number;
+  term_id: number;
+  overall_status: 'approved' | 'pending' | 'incomplete';
+  created_at: string;
+  last_updated: string;
+  approved_date?: string;
+  is_locked: boolean;
+  // Relations
+  student?: {
+    student_id: number;
+    student_number: string;
+    first_name: string;
+    last_name: string;
+    program: string;
+    year_level: number;
+  };
+  term?: {
+    term_id: number;
+    term_name: string;
+    term_code: string;
+  };
+  // Stats
+  total_items?: number;
+  approved_items?: number;
+  pending_items?: number;
+  needs_compliance_items?: number;
 }
 
 export interface ClearanceItem {
-  id: number;
-  student_id: number;
-  organization_id: number;
-  organization_name?: string;
-  status: ClearanceStatus;
-  remarks?: string;
-  submitted_at?: string;
-  reviewed_at?: string;
+  item_id: number;
+  clearance_id: number;
+  org_id: number;
+  status: 'approved' | 'pending' | 'needs_compliance';
+  approved_by?: number;
+  approved_date?: string;
+  is_auto_approved: boolean;
+  created_at: string;
+  status_updated: string;
+  // Relations
+  organization?: {
+    org_id: number;
+    org_name: string;
+    org_code: string;
+  };
+  approver?: {
+    admin_id: number;
+    first_name: string;
+    last_name: string;
+  };
+}
+
+export interface OrganizationClearanceStats {
+  org_id: number;
+  org_name: string;
+  org_code: string;
+  total_clearances: number;
+  approved: number;
+  pending: number;
+  needs_compliance: number;
+  approval_rate: number;
 }

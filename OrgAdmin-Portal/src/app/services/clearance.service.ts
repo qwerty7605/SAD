@@ -1,12 +1,15 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { HttpParams } from '@angular/common/http';
 import { ApiService } from './api.service';
-import { Clearance, ClearanceItem, ClearanceStatus } from '../models/clearance.model';
+import { ClearanceItem, StudentClearance, ClearanceStatistics } from '../models/clearance.model';
 
 /**
  * Clearance Service - Handles clearance review operations for org admins
- *
- * Example of how to use ApiService for specific functionality
+ * 
+ * Based on ERD structure:
+ * - CLEARANCE_ITEMS: Individual organization clearance status
+ * - STUDENT_CLEARANCES: Main clearance record per student per term
  */
 @Injectable({
   providedIn: 'root'
@@ -15,57 +18,68 @@ export class ClearanceService {
   private apiService = inject(ApiService);
 
   /**
-   * Get all pending clearances for the organization
+   * Get all clearance items for the organization's office
+   * Shows all students needing clearance for current term
    */
   getPendingClearances(): Observable<ClearanceItem[]> {
-    return this.apiService.get<ClearanceItem[]>('clearances/pending');
+    return this.apiService.get<ClearanceItem[]>('org-admin/clearance-items');
   }
 
   /**
-   * Get specific clearance by ID
+   * Get clearance items filtered by status
    */
-  getClearance(id: number): Observable<Clearance> {
-    return this.apiService.get<Clearance>(`clearances/${id}`);
+  getClearanceItemsByStatus(status: 'all' | 'pending' | 'approved' | 'needs_compliance'): Observable<ClearanceItem[]> {
+    let params = new HttpParams();
+    if (status !== 'all') {
+      params = params.set('status', status);
+    }
+    return this.apiService.get<ClearanceItem[]>('org-admin/clearance-items', params);
   }
 
   /**
-   * Approve clearance
+   * Get specific clearance item by ID
    */
-  approveClearance(id: number, remarks?: string): Observable<Clearance> {
-    return this.apiService.patch<Clearance>(`clearances/${id}/approve`, {
-      remarks
-    });
+  getClearanceItem(itemId: number): Observable<ClearanceItem> {
+    return this.apiService.get<ClearanceItem>(`org-admin/clearance-items/${itemId}`);
   }
 
   /**
-   * Reject clearance
+   * Approve a clearance item
+   * Changes status from 'pending' to 'approved'
    */
-  rejectClearance(id: number, remarks: string): Observable<Clearance> {
-    return this.apiService.patch<Clearance>(`clearances/${id}/reject`, {
-      remarks
-    });
+  approveClearance(itemId: number): Observable<ClearanceItem> {
+    return this.apiService.patch<ClearanceItem>(`org-admin/clearance-items/${itemId}/approve`, {});
   }
 
   /**
-   * Bulk approve clearances
+   * Mark clearance item as needing compliance
+   * Changes status to 'needs_compliance'
    */
-  bulkApprove(clearanceIds: number[]): Observable<any> {
-    return this.apiService.post('clearances/bulk-approve', {
-      clearance_ids: clearanceIds
+  rejectClearance(itemId: number): Observable<ClearanceItem> {
+    return this.apiService.patch<ClearanceItem>(`org-admin/clearance-items/${itemId}/needs-compliance`, {});
+  }
+
+  /**
+   * Bulk approve multiple clearance items
+   */
+  bulkApprove(itemIds: number[]): Observable<any> {
+    return this.apiService.post('org-admin/clearance-items/bulk-approve', {
+      item_ids: itemIds
     });
   }
 
   /**
    * Get clearance statistics for the organization
    */
-  getStatistics(): Observable<any> {
-    return this.apiService.get('clearances/statistics');
+  getStatistics(): Observable<ClearanceStatistics> {
+    return this.apiService.get<ClearanceStatistics>('org-admin/statistics');
   }
 
   /**
-   * Generate report
+   * Search clearances by student number or name
    */
-  generateReport(filters?: any): Observable<Blob> {
-    return this.apiService.download('clearances/report');
+  searchClearances(query: string): Observable<ClearanceItem[]> {
+    const params = new HttpParams().set('search', query);
+    return this.apiService.get<ClearanceItem[]>('org-admin/clearance-items', params);
   }
 }

@@ -1,0 +1,386 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Audit Logs</h1>
+    <div class="header-actions">
+      <button class="btn-secondary" (click)="toggleStats()">
+        {{ showStats() ? 'Hide' : 'Show' }} Statistics
+      </button>
+      <button class="btn-primary" (click)="exportToCSV()" [disabled]="logs().length === 0">
+        Export to CSV
+      </button>
+    </div>
+  </div>
+
+  <!-- Statistics Section -->
+  <div class="stats-section" *ngIf="showStats()">
+    <div class="stats-header">
+      <h2>Audit Log Statistics</h2>
+    </div>
+
+    <div *ngIf="isLoadingStats()" class="loading-spinner-small">
+      <div class="spinner"></div>
+    </div>
+
+    <div *ngIf="!isLoadingStats() && stats()" class="stats-content">
+      <!-- Summary Cards -->
+      <div class="stats-cards">
+        <div class="stat-card">
+          <div class="stat-icon total">📊</div>
+          <div class="stat-info">
+            <div class="stat-label">Total Logs</div>
+            <div class="stat-value">{{ stats()?.total_logs || 0 }}</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon today">📅</div>
+          <div class="stat-info">
+            <div class="stat-label">Today</div>
+            <div class="stat-value">{{ stats()?.today || 0 }}</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon week">📆</div>
+          <div class="stat-info">
+            <div class="stat-label">This Week</div>
+            <div class="stat-value">{{ stats()?.this_week || 0 }}</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon month">🗓️</div>
+          <div class="stat-info">
+            <div class="stat-label">This Month</div>
+            <div class="stat-value">{{ stats()?.this_month || 0 }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="stats-charts">
+        <!-- Logs by Action -->
+        <div class="chart-container">
+          <h3>Logs by Action Type</h3>
+          <div class="chart-list">
+            <div class="chart-item" *ngFor="let item of stats()?.by_action">
+              <div class="chart-label">
+                <span class="action-badge" [ngClass]="getActionClass(item.action_type)">
+                  {{ item.action_type }}
+                </span>
+              </div>
+              <div class="chart-bar-container">
+                <div class="chart-bar"
+                     [style.width.%]="(item.count / stats()!.total_logs) * 100">
+                </div>
+              </div>
+              <div class="chart-value">{{ item.count }}</div>
+            </div>
+            <div *ngIf="!stats()?.by_action || (stats()?.by_action && stats()!.by_action.length === 0)" class="empty-state-small">
+              No data available
+            </div>
+          </div>
+        </div>
+
+        <!-- Logs by Table Name -->
+        <div class="chart-container">
+          <h3>Logs by Table Name</h3>
+          <div class="chart-list">
+            <div class="chart-item" *ngFor="let item of stats()?.by_table">
+              <div class="chart-label entity-type">
+                {{ item.table_name }}
+              </div>
+              <div class="chart-bar-container">
+                <div class="chart-bar"
+                     [style.width.%]="(item.count / stats()!.total_logs) * 100">
+                </div>
+              </div>
+              <div class="chart-value">{{ item.count }}</div>
+            </div>
+            <div *ngIf="!stats()?.by_table || (stats()?.by_table && stats()!.by_table.length === 0)" class="empty-state-small">
+              No data available
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="content-card">
+    <!-- Quick Filters -->
+    <div class="quick-filters">
+      <button class="quick-filter-btn" (click)="setQuickDateRange('today')">Today</button>
+      <button class="quick-filter-btn" (click)="setQuickDateRange('week')">This Week</button>
+      <button class="quick-filter-btn" (click)="setQuickDateRange('month')">This Month</button>
+      <button class="quick-filter-btn clear" (click)="clearDateRange()" *ngIf="startDate() || endDate()">
+        Clear Date Range
+      </button>
+      <button class="quick-filter-btn clear" (click)="clearUserFilter()" *ngIf="userIdFilter()">
+        Clear User Filter
+      </button>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="search-filters">
+      <input
+        type="text"
+        placeholder="Search by user email, username, or action..."
+        class="search-input"
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="onSearch()"
+      >
+      <select class="filter-select" [(ngModel)]="actionTypeFilter" (ngModelChange)="onFilterChange()">
+        <option value="">All Action Types</option>
+        <option *ngFor="let actionType of availableActionTypes" [value]="actionType">{{ actionType }}</option>
+      </select>
+      <select class="filter-select" [(ngModel)]="tableNameFilter" (ngModelChange)="onFilterChange()">
+        <option value="">All Table Names</option>
+        <option *ngFor="let tableName of availableTableNames" [value]="tableName">{{ tableName }}</option>
+      </select>
+      <input
+        type="date"
+        placeholder="Start Date"
+        class="filter-input date-input"
+        [(ngModel)]="startDate"
+        (ngModelChange)="onFilterChange()"
+      >
+      <input
+        type="date"
+        placeholder="End Date"
+        class="filter-input date-input"
+        [(ngModel)]="endDate"
+        (ngModelChange)="onFilterChange()"
+      >
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="errorMessage()" class="error-message">
+      {{ errorMessage() }}
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading()" class="loading-spinner">
+      <div class="spinner"></div>
+      <p>Loading audit logs...</p>
+    </div>
+
+    <!-- Audit Logs Table -->
+    <div *ngIf="!isLoading() && logs().length > 0">
+      <div class="table-wrapper">
+        <table class="data-table compact">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>User</th>
+              <th>Action Type</th>
+              <th>Table Name</th>
+              <th>Record ID</th>
+              <th>IP Address</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let log of logs()">
+              <td>{{ log.created_at | date:'short' }}</td>
+              <td>
+                <div class="user-cell">
+                  <div class="user-info">
+                    <span class="user-name" *ngIf="log.user">{{ log.user.username }}</span>
+                    <span class="user-name" *ngIf="!log.user">System</span>
+                    <span class="user-email" *ngIf="log.user">{{ log.user.email }}</span>
+                  </div>
+                  <button
+                    class="btn-link"
+                    *ngIf="log.user_id"
+                    (click)="filterByUser(log.user_id)"
+                    title="Filter by this user"
+                  >
+                    Filter
+                  </button>
+                </div>
+              </td>
+              <td>
+                <span class="action-badge" [ngClass]="getActionClass(log.action_type)">
+                  {{ log.action_type }}
+                </span>
+              </td>
+              <td>
+                <span class="entity-type-badge">{{ log.table_name || 'N/A' }}</span>
+              </td>
+              <td>{{ log.record_id || 'N/A' }}</td>
+              <td class="ip-address">{{ log.ip_address || 'N/A' }}</td>
+              <td>
+                <button class="btn-view" (click)="openDetailsModal(log)">View Details</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        <div class="pagination-info">
+          Showing {{ (currentPage() - 1) * perPage() + 1 }} to {{ Math.min(currentPage() * perPage(), total()) }} of {{ total() }} logs
+        </div>
+        <div class="pagination-buttons">
+          <button
+            class="pagination-btn"
+            (click)="previousPage()"
+            [disabled]="currentPage() === 1"
+          >
+            Previous
+          </button>
+          <span class="page-info">Page {{ currentPage() }} of {{ totalPages() }}</span>
+          <button
+            class="pagination-btn"
+            (click)="nextPage()"
+            [disabled]="currentPage() === totalPages()"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isLoading() && logs().length === 0" class="placeholder-state">
+      <div class="placeholder-icon">📋</div>
+      <h3>No Audit Logs Found</h3>
+      <p>No audit logs match your current filters.</p>
+      <p class="note">Try adjusting your search criteria or date range.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Details Modal -->
+<div *ngIf="showDetailsModal()" class="modal-overlay" (click)="closeDetailsModal()">
+  <div class="modal modal-wide" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Audit Log Details</h2>
+      <button class="modal-close" (click)="closeDetailsModal()">&times;</button>
+    </div>
+
+    <div class="modal-body" *ngIf="selectedLog()">
+      <div class="details-grid">
+        <!-- Basic Information -->
+        <div class="details-section">
+          <h3>Basic Information</h3>
+          <div class="details-row">
+            <span class="details-label">Log ID:</span>
+            <span class="details-value">{{ selectedLog()!.log_id }}</span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">Timestamp:</span>
+            <span class="details-value">{{ selectedLog()!.created_at | date:'medium' }}</span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">Action Type:</span>
+            <span class="details-value">
+              <span class="action-badge" [ngClass]="getActionClass(selectedLog()!.action_type)">
+                {{ selectedLog()!.action_type }}
+              </span>
+            </span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">Table Name:</span>
+            <span class="details-value">
+              <span class="entity-type-badge">{{ selectedLog()!.table_name || 'N/A' }}</span>
+            </span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">Record ID:</span>
+            <span class="details-value">{{ selectedLog()!.record_id || 'N/A' }}</span>
+          </div>
+        </div>
+
+        <!-- User Information -->
+        <div class="details-section">
+          <h3>User Information</h3>
+          <div class="details-row" *ngIf="selectedLog()!.user">
+            <span class="details-label">User ID:</span>
+            <span class="details-value">{{ selectedLog()!.user!.user_id }}</span>
+          </div>
+          <div class="details-row" *ngIf="selectedLog()!.user">
+            <span class="details-label">Username:</span>
+            <span class="details-value">{{ selectedLog()!.user!.username }}</span>
+          </div>
+          <div class="details-row" *ngIf="selectedLog()!.user">
+            <span class="details-label">Email:</span>
+            <span class="details-value">{{ selectedLog()!.user!.email }}</span>
+          </div>
+          <div class="details-row" *ngIf="selectedLog()!.user">
+            <span class="details-label">User Type:</span>
+            <span class="details-value">{{ selectedLog()!.user!.user_type }}</span>
+          </div>
+          <div class="details-row" *ngIf="!selectedLog()!.user">
+            <span class="details-label">User:</span>
+            <span class="details-value">System Action</span>
+          </div>
+        </div>
+
+        <!-- Technical Information -->
+        <div class="details-section full-width">
+          <h3>Technical Information</h3>
+          <div class="details-row">
+            <span class="details-label">IP Address:</span>
+            <span class="details-value">{{ selectedLog()!.ip_address || 'N/A' }}</span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">User Agent:</span>
+            <span class="details-value user-agent">{{ selectedLog()!.user_agent || 'N/A' }}</span>
+          </div>
+        </div>
+
+        <!-- Old Value -->
+        <div class="details-section full-width" *ngIf="selectedLog()!.old_value">
+          <h3>Old Value</h3>
+          <div class="changes-container">
+            <!-- Key-Value Pairs Format -->
+            <div class="changes-pairs" *ngIf="parseValuePairs(selectedLog()!.old_value).length > 0">
+              <div class="change-item" *ngFor="let pair of parseValuePairs(selectedLog()!.old_value)">
+                <span class="change-key">{{ pair.key }}:</span>
+                <span class="change-value">{{ pair.value }}</span>
+              </div>
+            </div>
+
+            <!-- JSON Format -->
+            <div class="changes-json">
+              <h4>Raw JSON:</h4>
+              <pre>{{ formatValue(selectedLog()!.old_value) }}</pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- New Value -->
+        <div class="details-section full-width" *ngIf="selectedLog()!.new_value">
+          <h3>New Value</h3>
+          <div class="changes-container">
+            <!-- Key-Value Pairs Format -->
+            <div class="changes-pairs" *ngIf="parseValuePairs(selectedLog()!.new_value).length > 0">
+              <div class="change-item" *ngFor="let pair of parseValuePairs(selectedLog()!.new_value)">
+                <span class="change-key">{{ pair.key }}:</span>
+                <span class="change-value">{{ pair.value }}</span>
+              </div>
+            </div>
+
+            <!-- JSON Format -->
+            <div class="changes-json">
+              <h4>Raw JSON:</h4>
+              <pre>{{ formatValue(selectedLog()!.new_value) }}</pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- No Changes Message -->
+        <div class="details-section full-width" *ngIf="!selectedLog()!.old_value && !selectedLog()!.new_value">
+          <h3>Changes</h3>
+          <div class="no-changes">
+            No changes recorded
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="closeDetailsModal()">Close</button>
+    </div>
+  </div>
+</div>

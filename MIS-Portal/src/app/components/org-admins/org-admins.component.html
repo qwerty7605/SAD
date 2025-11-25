@@ -1,0 +1,211 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Organization Admin Management</h1>
+    <button class="btn-primary" (click)="openCreateModal()">Add Organization Admin</button>
+  </div>
+
+  <div class="content-card">
+    <!-- Search and Filters -->
+    <div class="search-filters">
+      <input
+        type="text"
+        placeholder="Search by name, email, or position..."
+        class="search-input"
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="onSearch()"
+      >
+      <select class="filter-select" [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()">
+        <option value="all">All Status</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+      <select class="filter-select" [(ngModel)]="organizationFilter" (ngModelChange)="onFilterChange()">
+        <option value="">All Organizations</option>
+        <option *ngFor="let org of organizations()" [value]="org.org_id">
+          {{ org.org_name }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="errorMessage()" class="error-message">
+      {{ errorMessage() }}
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading()" class="loading-spinner">
+      <div class="spinner"></div>
+      <p>Loading organization admins...</p>
+    </div>
+
+    <!-- Org Admins Table -->
+    <div *ngIf="!isLoading() && orgAdmins().length > 0">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Full Name</th>
+            <th>Organization</th>
+            <th>Position</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let admin of orgAdmins()">
+            <td>{{ admin.full_name }}</td>
+            <td>{{ admin.organization?.org_name }}</td>
+            <td>{{ admin.position }}</td>
+            <td>
+              <span class="status-badge" [class.active]="admin.is_active" [class.inactive]="!admin.is_active">
+                {{ admin.is_active ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-edit" (click)="openEditModal(admin)">Edit</button>
+                <button class="btn-delete" (click)="openDeleteModal(admin)">Delete</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        <div class="pagination-info">
+          Showing {{ (currentPage() - 1) * perPage() + 1 }} to {{ Math.min(currentPage() * perPage(), total()) }} of {{ total() }} organization admins
+        </div>
+        <div class="pagination-buttons">
+          <button
+            class="pagination-btn"
+            (click)="previousPage()"
+            [disabled]="currentPage() === 1"
+          >
+            Previous
+          </button>
+          <span class="page-info">Page {{ currentPage() }} of {{ totalPages() }}</span>
+          <button
+            class="pagination-btn"
+            (click)="nextPage()"
+            [disabled]="currentPage() === totalPages()"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isLoading() && orgAdmins().length === 0" class="placeholder-state">
+      <div class="placeholder-icon">👨‍💼</div>
+      <h3>No Organization Admins Found</h3>
+      <p>No organization admins match your current filters.</p>
+      <p class="note">Try adjusting your search criteria or add a new organization admin.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div *ngIf="showModal()" class="modal-overlay" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ modalMode() === 'create' ? 'Add New Organization Admin' : 'Edit Organization Admin' }}</h2>
+      <button class="modal-close" (click)="closeModal()">&times;</button>
+    </div>
+
+    <form (ngSubmit)="onSubmit()">
+      <div class="modal-body">
+        <div class="form-section">
+          <h3>Admin Information</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="full_name">Full Name *</label>
+              <input
+                type="text"
+                id="full_name"
+                [(ngModel)]="formData().full_name"
+                name="full_name"
+                required
+                placeholder="Enter full name"
+              >
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="org_id">Organization *</label>
+              <select
+                id="org_id"
+                [(ngModel)]="formData().org_id"
+                name="org_id"
+                required
+              >
+                <option value="0" disabled>Select an organization</option>
+                <option *ngFor="let org of organizations()" [value]="org.org_id">
+                  {{ org.org_name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="position">Position *</label>
+              <input
+                type="text"
+                id="position"
+                [(ngModel)]="formData().position"
+                name="position"
+                required
+                placeholder="e.g., Department Head, Coordinator"
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="formData().is_active"
+                  name="is_active"
+                >
+                Active
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" (click)="closeModal()">Cancel</button>
+        <button type="submit" class="btn-submit">
+          {{ modalMode() === 'create' ? 'Create Admin' : 'Update Admin' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div *ngIf="showDeleteModal()" class="modal-overlay" (click)="closeDeleteModal()">
+  <div class="modal modal-small" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Confirm Delete</h2>
+      <button class="modal-close" (click)="closeDeleteModal()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <p>Are you sure you want to delete this organization admin?</p>
+      <p class="delete-info">
+        <strong>{{ orgAdminToDelete()?.full_name }}</strong><br>
+        Position: {{ orgAdminToDelete()?.position }}<br>
+        Organization: {{ orgAdminToDelete()?.organization?.org_name }}
+      </p>
+      <p class="warning">This action cannot be undone.</p>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="closeDeleteModal()">Cancel</button>
+      <button type="button" class="btn-delete-confirm" (click)="confirmDelete()">Delete Admin</button>
+    </div>
+  </div>
+</div>

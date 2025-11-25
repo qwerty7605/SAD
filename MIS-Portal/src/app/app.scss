@@ -1,0 +1,32 @@
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-layout {
+  display: flex;
+  flex: 1;
+  padding-top: 72px; // Height of navbar
+  position: relative;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  background-color: #ffffff;
+  transition: margin-left 0.3s ease;
+  margin-left: 0;
+
+  &.sidebar-open {
+    margin-left: 250px;
+  }
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+
+    &.sidebar-open {
+      margin-left: 0;
+    }
+  }
+}

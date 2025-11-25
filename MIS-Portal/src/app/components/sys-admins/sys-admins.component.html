@@ -1,0 +1,203 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>System Admin Management</h1>
+    <button class="btn-primary" (click)="openCreateModal()">Add System Admin</button>
+  </div>
+
+  <div class="content-card">
+    <!-- Search and Filters -->
+    <div class="search-filters">
+      <input
+        type="text"
+        placeholder="Search by name or email..."
+        class="search-input"
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="onSearch()"
+      >
+      <select class="filter-select" [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()">
+        <option value="all">All Status</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+      <select class="filter-select" [(ngModel)]="adminLevelFilter" (ngModelChange)="onFilterChange()">
+        <option value="all">All Levels</option>
+        <option value="super_admin">Super Admin</option>
+        <option value="mis_staff">MIS Staff</option>
+      </select>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="errorMessage()" class="error-message">
+      {{ errorMessage() }}
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading()" class="loading-spinner">
+      <div class="spinner"></div>
+      <p>Loading system admins...</p>
+    </div>
+
+    <!-- System Admins Table -->
+    <div *ngIf="!isLoading() && sysAdmins().length > 0">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Admin Level</th>
+            <th>Department</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let admin of sysAdmins()">
+            <td>{{ admin.full_name }}</td>
+            <td>{{ admin.user?.email }}</td>
+            <td>
+              <span class="badge"
+                [class.super-admin]="admin.admin_level === 'super_admin'"
+                [class.mis-staff]="admin.admin_level === 'mis_staff'">
+                {{ getAdminLevelLabel(admin.admin_level) }}
+              </span>
+            </td>
+            <td>{{ admin.department || 'N/A' }}</td>
+            <td>
+              <span class="status-badge" [class.active]="admin.user?.is_active" [class.inactive]="!admin.user?.is_active">
+                {{ admin.user?.is_active ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-edit" (click)="openEditModal(admin)">Edit</button>
+                <button class="btn-delete" (click)="openDeleteModal(admin)">Delete</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        <div class="pagination-info">
+          Showing {{ (currentPage() - 1) * perPage() + 1 }} to {{ Math.min(currentPage() * perPage(), total()) }} of {{ total() }} system admins
+        </div>
+        <div class="pagination-buttons">
+          <button
+            class="pagination-btn"
+            (click)="previousPage()"
+            [disabled]="currentPage() === 1"
+          >
+            Previous
+          </button>
+          <span class="page-info">Page {{ currentPage() }} of {{ totalPages() }}</span>
+          <button
+            class="pagination-btn"
+            (click)="nextPage()"
+            [disabled]="currentPage() === totalPages()"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isLoading() && sysAdmins().length === 0" class="placeholder-state">
+      <div class="placeholder-icon">⚙️</div>
+      <h3>No System Admins Found</h3>
+      <p>No system admins match your current filters.</p>
+      <p class="note">Try adjusting your search criteria or add a new system admin.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div *ngIf="showModal()" class="modal-overlay" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ modalMode() === 'create' ? 'Add New System Admin' : 'Edit System Admin' }}</h2>
+      <button class="modal-close" (click)="closeModal()">&times;</button>
+    </div>
+
+    <form (ngSubmit)="onSubmit()">
+      <div class="modal-body">
+        <div class="form-section">
+          <h3>Personal Information</h3>
+          <div class="form-row">
+            <div class="form-group full-width">
+              <label for="full_name">Full Name *</label>
+              <input
+                type="text"
+                id="full_name"
+                [(ngModel)]="formData().full_name"
+                name="full_name"
+                required
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Admin Information</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="admin_level">Admin Level *</label>
+              <select
+                id="admin_level"
+                [(ngModel)]="formData().admin_level"
+                name="admin_level"
+                required
+              >
+                <option value="super_admin">Super Admin</option>
+                <option value="mis_staff">MIS Staff</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="department">Department</label>
+              <input
+                type="text"
+                id="department"
+                [(ngModel)]="formData().department"
+                name="department"
+                placeholder="e.g., IT Department"
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" (click)="closeModal()">Cancel</button>
+        <button type="submit" class="btn-submit">
+          {{ modalMode() === 'create' ? 'Create Admin' : 'Update Admin' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div *ngIf="showDeleteModal()" class="modal-overlay" (click)="closeDeleteModal()">
+  <div class="modal modal-small" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Confirm Delete</h2>
+      <button class="modal-close" (click)="closeDeleteModal()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <p>Are you sure you want to delete this system admin?</p>
+      <p class="delete-info">
+        <strong>{{ sysAdminToDelete()?.full_name }}</strong><br>
+        Admin Level: {{ getAdminLevelLabel(sysAdminToDelete()?.admin_level || '') }}<br>
+        Email: {{ sysAdminToDelete()?.user?.email }}
+      </p>
+      <p class="warning">This action cannot be undone.</p>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="closeDeleteModal()">Cancel</button>
+      <button type="button" class="btn-delete-confirm" (click)="confirmDelete()">Delete Admin</button>
+    </div>
+  </div>
+</div>

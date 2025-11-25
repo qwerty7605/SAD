@@ -1,0 +1,109 @@
+<div class="clearance-list-container">
+  <div class="page-header">
+    <h1>Student Clearances</h1>
+    <p>Review and process student clearance requests</p>
+  </div>
+
+  <div class="filters-section">
+    <div class="search-box">
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="onSearchChange()"
+        placeholder="Search by student number or name..."
+      />
+    </div>
+
+    <div class="filter-group">
+      <label>Status:</label>
+      <select [(ngModel)]="statusFilter" (ngModelChange)="onStatusFilterChange()">
+        <option value="all">All</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="needs_compliance">Needs Compliance</option>
+      </select>
+    </div>
+
+    <button
+      class="btn-batch-approve"
+      [disabled]="selectedClearances.length === 0"
+      (click)="batchApprove()"
+    >
+      Approve Selected ({{ selectedClearances.length }})
+    </button>
+  </div>
+
+  <div class="loading" *ngIf="isLoading">
+    <p>Loading clearances...</p>
+  </div>
+
+  <div class="clearances-table" *ngIf="!isLoading">
+    <table>
+      <thead>
+        <tr>
+          <th>
+            <input
+              type="checkbox"
+              (change)="toggleSelectAll($event)"
+              [checked]="selectedClearances.length === filteredClearances.length && filteredClearances.length > 0"
+            />
+          </th>
+          <th>Student No.</th>
+          <th>Student Name</th>
+          <th>Status</th>
+          <th>Submitted</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of filteredClearances">
+          <td>
+            <input
+              type="checkbox"
+              [checked]="isSelected(item.item_id)"
+              (change)="toggleSelection(item.item_id)"
+            />
+          </td>
+          <td>{{ item.student_number || 'N/A' }}</td>
+          <td>{{ item.student_name || 'N/A' }}</td>
+          <td>
+            <span [class]="getStatusClass(item.status)">
+              {{ getStatusLabel(item.status) }}
+            </span>
+          </td>
+          <td>{{ item.created_at | date:'short' }}</td>
+          <td class="actions">
+            <button
+              class="btn-approve"
+              *ngIf="item.status !== 'approved'"
+              (click)="approveClearance(item.item_id)"
+              title="Approve this clearance"
+            >
+              ✓ Approve
+            </button>
+            <button
+              class="btn-decline"
+              *ngIf="item.status !== 'needs_compliance'"
+              (click)="declineClearance(item.item_id)"
+              title="Mark as needing compliance"
+            >
+              ✗ Needs Compliance
+            </button>
+            <span *ngIf="item.status === 'approved'" class="approved-label">
+              ✓ Approved
+            </span>
+            <span *ngIf="item.status === 'needs_compliance'" class="compliance-label">
+              ✗ Needs Compliance
+            </span>
+          </td>
+        </tr>
+        <tr *ngIf="filteredClearances.length === 0 && !isLoading">
+          <td colspan="6" class="no-data">
+            <p>No clearances found</p>
+            <small *ngIf="statusFilter !== 'all' || searchTerm">Try adjusting your filters</small>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -59,32 +59,35 @@ class UserSeeder extends Seeder
             ],
         ]);
 
-        // Students
-        DB::table('users')->insert([
-            [
-                'user_id' => 6,
-                'username' => '2020-12345',
+        // Students - Create user accounts for all IT students
+        $studentUsers = [];
+
+        // Total students: 136 (40 + 40 + 32 + 24)
+        // Starting from user_id 6 to 141
+        for ($userId = 6; $userId <= 141; $userId++) {
+            $studentNumber = '';
+
+            // Determine student number based on year level
+            if ($userId <= 45) { // Year 1 (40 students)
+                $studentNumber = '2024-' . str_pad($userId, 5, '0', STR_PAD_LEFT);
+            } elseif ($userId <= 85) { // Year 2 (40 students)
+                $studentNumber = '2023-' . str_pad($userId - 40, 5, '0', STR_PAD_LEFT);
+            } elseif ($userId <= 117) { // Year 3 (32 students)
+                $studentNumber = '2022-' . str_pad($userId - 80, 5, '0', STR_PAD_LEFT);
+            } else { // Year 4 (24 students)
+                $studentNumber = '2021-' . str_pad($userId - 112, 5, '0', STR_PAD_LEFT);
+            }
+
+            $studentUsers[] = [
+                'user_id' => $userId,
+                'username' => $studentNumber,
                 'password_hash' => Hash::make('password'),
-                'email' => 'juan.delacruz@lnu.edu.ph',
+                'email' => strtolower($studentNumber) . '@lnu.edu.ph',
                 'user_type' => 'student',
                 'is_active' => true,
-            ],
-            [
-                'user_id' => 7,
-                'username' => '2021-67890',
-                'password_hash' => Hash::make('password'),
-                'email' => 'maria.santos@lnu.edu.ph',
-                'user_type' => 'student',
-                'is_active' => true,
-            ],
-            [
-                'user_id' => 8,
-                'username' => '2022-11111',
-                'password_hash' => Hash::make('password'),
-                'email' => 'pedro.reyes@lnu.edu.ph',
-                'user_type' => 'student',
-                'is_active' => true,
-            ],
-        ]);
+            ];
+        }
+
+        DB::table('users')->insert($studentUsers);
     }
 }
