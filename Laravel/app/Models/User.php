@@ -37,6 +37,15 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Get the password for the user.
+     * This tells Laravel to use 'password_hash' instead of 'password'
+     */
+    public function getAuthPassword()
+    {
+        return $this->password_hash;
+    }
+
     // Relationships
     public function student(): HasOne
     {

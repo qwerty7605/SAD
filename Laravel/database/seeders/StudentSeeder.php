@@ -16,12 +16,12 @@ class StudentSeeder extends Seeder
         $studentId = 6;
 
         // First names pool
-        $firstNames = ['Prince', 'Eujan', 'Wayne', 'Julius Rey', 'Jose', 'Pineapple', 'Princess', 'Lou', 'Kato', 'Elena',
-                       'Carlos', 'Sofia', 'Rafael', 'Isabel', 'Diego', 'Lucia', 'Antonio', 'Gabriela', 'Fernando', 'Patricia'];
+        $firstNames = ['Prince', 'Eujan', 'Wayne', 'Julius Rey', 'Jose', 'Pineapple', 'Princess', 'Saging', 'Kato', 'Elena',
+                       'Carlos', 'Sofia', 'Rafael', 'Isabel', 'Diego', 'Lucia', 'Antonio', 'Gabriela', 'Fernando', 'May'];
 
         // Last names pool
         $lastNames = ['Yan', 'Zeta', 'Tabalanza', 'dela Pena', 'Rizal', 'Pogi', 'Tan', 'Rambutan',
-                      'Orange', 'Perez', 'Sanchez', 'Ramirez', 'Torres', 'Flores', 'Rivera', 'Gomez'];
+                      'Orange', 'Perez', 'Sanchez', 'Ramirez', 'Sam Ting', 'Flores', 'Rivera', 'Gomez'];
 
         // Year 1 - Sections AI-11 to AI-15 (5 sections, 8 students each = 40 students)
         for ($section = 11; $section <= 15; $section++) {

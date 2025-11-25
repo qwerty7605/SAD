@@ -3,12 +3,20 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OrgAdminClearanceController;
 use App\Http\Controllers\MISController;
+use App\Http\Controllers\StudentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->post('logout', [AuthController::class, 'logout']);
+
+// Student routes
+Route::middleware('auth:sanctum')->prefix('student')->group(function () {
+    Route::get('profile', [StudentController::class, 'getProfile']);
+    Route::get('clearances', [StudentController::class, 'getClearances']);
+    Route::get('clearances/summary', [StudentController::class, 'getClearanceSummary']);
+});
 
 // Organization Admin routes
 Route::middleware('auth:sanctum')->prefix('org-admin')->group(function () {

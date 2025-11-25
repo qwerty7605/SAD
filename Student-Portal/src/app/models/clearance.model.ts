@@ -6,8 +6,8 @@ export interface Clearance {
   id: number;
   student_id: number;
   organization_id: number;
+  organization_name?: string;
   status: ClearanceStatus;
-  remarks?: string;
   submitted_at?: string;
   reviewed_at?: string;
   reviewer_id?: number;
@@ -17,11 +17,9 @@ export interface Clearance {
 }
 
 export enum ClearanceStatus {
-  PENDING = 'pending',
-  SUBMITTED = 'submitted',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-  CONDITIONALLY_APPROVED = 'conditionally_approved'
+  PENDING = 'Pending',
+  APPROVED = 'Approved',
+  Needs_Compliance = 'Needs Compliance',
 }
 
 export interface ClearanceDocument {
@@ -39,7 +37,6 @@ export interface ClearanceItem {
   organization_id: number;
   organization_name?: string;
   status: ClearanceStatus;
-  remarks?: string;
   submitted_at?: string;
   reviewed_at?: string;
 }

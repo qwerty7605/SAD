@@ -35,6 +35,12 @@ class Organization extends Model
         return $this->hasOne(OrganizationAdmin::class, 'org_id', 'org_id');
     }
 
+    // Get all admins for this organization (for orgs with multiple signatories)
+    public function admins(): HasMany
+    {
+        return $this->hasMany(OrganizationAdmin::class, 'org_id', 'org_id');
+    }
+
     public function clearanceItems(): HasMany
     {
         return $this->hasMany(ClearanceItem::class, 'org_id', 'org_id');
