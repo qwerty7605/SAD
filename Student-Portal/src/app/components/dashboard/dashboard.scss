@@ -1,0 +1,159 @@
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #1e1b80;
+  padding: 0.75rem 9%;
+
+  .navbar-left .logo {
+    height: 50px;
+    width: auto;
+  }
+
+  .navbar-right {
+    display: flex;
+    font-size: 14px;
+    align-items: center;
+    gap: 2rem;
+
+    .nav-link {
+      color: #fff;
+      font-weight: 600;
+      text-decoration: underline orange;
+    }
+
+    .nav-user {
+      color: #91ff00;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  }
+
+  .hamburger {
+    display: none;
+    font-size: 1.5rem;
+    color: #fff;
+    cursor: pointer;
+  }
+}
+
+/* Show hamburger and stack menu on small screens */
+@media (max-width: 1292px) {
+  .navbar {
+    padding: 0.75rem 8%;
+
+    .navbar-right {
+      flex-direction: column;
+      position: absolute;
+      top: 70px;
+      right: 0;
+      width: 200px;
+      background-color: #1e1b80;
+      display: none; // hidden by default
+      border-radius: 0 0 12px 12px;
+      padding: 1rem;
+
+      &.active {
+        display: flex;
+      }
+    }
+
+    .hamburger {
+      display: block;
+    }
+  }
+}
+
+/* Main Dashboard */
+.default-container {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+
+  .profile-sem {
+    font-weight: 600;
+  }
+
+  .profile-greeting {
+    font-size: 1.5rem;
+    font-weight: 500;
+  }
+
+  .status-summary {
+    font-weight: 500;
+  }
+}
+
+.status-container {
+  display: flex;
+  border-radius: 60px;
+  gap: 1rem;
+
+  .status-card {
+    border-radius: 60px;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #155724;
+
+    &.status-enrolled {
+      background-color: #d4edda; // green
+    }
+
+    &.status-pending {
+      background-color: #ede4d4; // yellow
+    }
+
+    &.status-approved {
+      background-color: #d4edda; // green
+    }
+
+    &.status-pending-clearance {
+      background-color: #ede4d4; // yellow
+    }
+
+    &.status-needs-compliance {
+      background-color: #f58d97; // red
+    }
+
+    i {
+      font-size: 1.2rem;
+      vertical-align: middle;
+    }
+  }
+}
+
+.details-card {
+  background-color: #f5f5fc;
+  padding: 1rem;
+  border-radius: 20px;
+  margin-bottom: 1rem;
+
+  .highlight {
+    font-weight: 600;
+    color: #070372;
+    text-transform: uppercase;
+  }
+
+  .text-primary {
+    font-weight: 600;
+    color: #4285f4;
+  }
+
+  .sched-val {
+    font-weight: 600;
+    color: #4285f4;
+  }
+}
+
+/* Profile background image */
+.profile-bg {
+  position: relative;
+  border-top-left-radius: 25px;
+  border-bottom-left-radius: 25px;
+  overflow: hidden;
+}

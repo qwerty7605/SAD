@@ -16,7 +16,7 @@ export interface User {
 export enum UserRole {
   STUDENT = 'student',
   ORG_ADMIN = 'org_admin',
-  MIS_ADMIN = 'mis_admin'
+  MIS_ADMIN = 'mis_admin',
 }
 
 export interface Student extends User {
@@ -24,4 +24,5 @@ export interface Student extends User {
   program?: string;
   year_level?: number;
   section?: string;
+  contact_number: number;
 }

@@ -1,0 +1,147 @@
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="navbar-left">
+    <img src="./poes_logo.png" alt="Logo" class="logo" />
+  </div>
+
+  <!-- Hamburger -->
+  <div class="hamburger" (click)="menuOpen = !menuOpen">
+    <i class="bi bi-list"></i>
+  </div>
+
+  <!-- Navbar links -->
+  <div class="navbar-right" [class.active]="menuOpen">
+    <span class="nav-user"><i class="bi bi-person-circle"></i> Hello, {{ user.name }}</span>
+    <a routerLink="/dashboard" class="nav-link">Student Profile</a>
+    <a routerLink="/dashboard" class="nav-link">Monitor Enrollment</a>
+    <a routerLink="/clearance" class="nav-link active">Clearance Monitoring</a>
+    <a routerLink="" class="nav-link">Log out</a>
+  </div>
+</nav>
+
+<!-- Main Clearance Content -->
+<main id="main" class="container mt-5">
+  <!-- ====== Header Card ====== -->
+  <div class="default-container clearance-card p-4 mb-4">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h4 class="mb-3"><i class="bi bi-clipboard-check"></i> Clearance Monitoring System</h4>
+        <p class="profile-text mb-2">
+          <strong>Name:</strong> <span>{{ user.name || user.student?.first_name + ' ' + user.student?.last_name }}</span>
+        </p>
+        <p class="profile-text mb-2">
+          <strong>Student Number:</strong> <span>{{ user.studentNumber || user.student?.student_number }}</span>
+        </p>
+        <p class="profile-text mb-2">
+          <strong>Program:</strong> <span>{{ user.program || user.student?.course }}</span>
+        </p>
+        <p class="profile-text mb-0">
+          <strong>Year Level:</strong> <span>{{ user.yearLevel || user.student?.year_level }}</span>
+        </p>
+      </div>
+      <div class="col-md-4 text-center">
+        <div class="clearance-summary">
+          <h5>Overall Status</h5>
+          <div class="status-badge" [ngClass]="getOverallStatusClass()">
+            <i class="bi" [ngClass]="getOverallStatusIcon()"></i>
+            {{ getOverallStatusText() }}
+          </div>
+          <p class="mt-2 small">
+            {{ getApprovedCount() }} of {{ clearances.length }} approved
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== Clearance Table ====== -->
+  <div class="default-container p-0">
+    <div class="table-header">
+      <h5><i class="bi bi-list-check"></i> Clearance Requirements</h5>
+    </div>
+
+    <div class="table-responsive">
+      <table class="clearance-table">
+        <thead>
+          <tr>
+            <th class="text-center" style="width: 5%">#</th>
+            <th style="width: 25%">Office/Organization</th>
+            <th style="width: 15%">Department</th>
+            <th style="width: 20%">Signatory</th>
+            <th style="width: 15%">Position</th>
+            <th class="text-center" style="width: 15%">Status</th>
+            <th class="text-center" style="width: 10%">Reviewed</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="clearances.length === 0">
+            <td colspan="7" class="text-center py-4">
+              <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc"></i>
+              <p class="mt-2 text-muted">No clearance requirements found.</p>
+            </td>
+          </tr>
+          <tr *ngFor="let item of clearances; let i = index" [ngClass]="getRowClass(item.status)">
+            <td class="text-center">{{ i + 1 }}</td>
+            <td>
+              <strong>{{ item.organization_name }}</strong>
+              <br />
+              <small class="text-muted">{{ item.organization_type }}</small>
+            </td>
+            <td>{{ item.department || 'N/A' }}</td>
+            <td>{{ item.signatory_name }}</td>
+            <td>{{ item.signatory_position }}</td>
+            <td class="text-center">
+              <span class="status-badge" [ngClass]="getStatusBadgeClass(item.status)">
+                <i class="bi" [ngClass]="getStatusIcon(item.status)"></i>
+                {{ item.status }}
+              </span>
+            </td>
+            <td class="text-center">
+              <span *ngIf="item.reviewed_at" class="text-muted small">
+                {{ formatDate(item.reviewed_at) }}
+              </span>
+              <span *ngIf="!item.reviewed_at" class="text-muted small">-</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ====== Summary Cards ====== -->
+  <div class="row mt-4">
+    <div class="col-md-4">
+      <div class="summary-card approved">
+        <div class="icon">
+          <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <div class="content">
+          <h3>{{ getApprovedCount() }}</h3>
+          <p>Approved</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="summary-card pending">
+        <div class="icon">
+          <i class="bi bi-hourglass-split"></i>
+        </div>
+        <div class="content">
+          <h3>{{ getPendingCount() }}</h3>
+          <p>Pending</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="summary-card needs-compliance">
+        <div class="icon">
+          <i class="bi bi-exclamation-circle-fill"></i>
+        </div>
+        <div class="content">
+          <h3>{{ getNeedsComplianceCount() }}</h3>
+          <p>Needs Compliance</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
