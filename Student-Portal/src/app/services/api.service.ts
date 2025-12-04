@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../environments/environment';
+import { getApiUrl } from '../../environments/environment';
 
 /**
  * Base API Service - Handles all HTTP communications with Laravel backend
@@ -14,7 +14,7 @@ import { environment } from '../../environments/environment';
 })
 export class ApiService {
   private http = inject(HttpClient);
-  private apiUrl = environment.apiUrl + '/api';
+  private apiUrl = getApiUrl() + '/api';
 
   /**
    * Normalize endpoint path to avoid duplicate slashes.

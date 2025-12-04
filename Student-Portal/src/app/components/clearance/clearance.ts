@@ -35,15 +35,17 @@ export class ClearanceComponent implements OnInit {
 
   // Get count methods
   getApprovedCount(): number {
-    return this.clearances.filter((c) => c.status === 'Approved').length;
+    return this.clearances.filter((c) => c.status?.toLowerCase() === 'approved').length;
   }
 
   getPendingCount(): number {
-    return this.clearances.filter((c) => c.status === 'Pending').length;
+    return this.clearances.filter((c) => c.status?.toLowerCase() === 'pending').length;
   }
 
   getNeedsComplianceCount(): number {
-    return this.clearances.filter((c) => c.status === 'Needs Compliance' || c.status === 'Needs compliance').length;
+    return this.clearances.filter((c) =>
+      c.status?.toLowerCase().includes('compliance')
+    ).length;
   }
 
   // Overall status methods

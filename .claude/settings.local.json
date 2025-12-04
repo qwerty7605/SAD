@@ -13,7 +13,9 @@
       "Bash(docker network:*)",
       "Bash(docker inspect:*)",
       "Bash(find:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(cd:*)",
+      "Bash(docker-compose:*)"
     ],
     "deny": [],
     "ask": []

@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { ApiService } from './api.service';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../environments/environment';
+import { getApiUrl } from '../../environments/environment';
 
 export interface LoginCredentials {
   email: string;
@@ -18,7 +18,7 @@ export interface AuthResponse {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
-  private apiUrl = environment.apiUrl + '/api';
+  private apiUrl = getApiUrl() + '/api';
 
   login(credentials: { studentNumber: string; password: string }) {
     return this.http.post<{ token: string; user: any }>(`${this.apiUrl}/login`, credentials).pipe(

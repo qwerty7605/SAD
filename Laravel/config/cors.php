@@ -26,7 +26,9 @@ return [
         'http://laravel-nginx-1',  // Allow requests from containers on same network
     ],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        '/^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/',  // Allow all local network IPs (10.x.x.x) with any port
+    ],
 
     'allowed_headers' => ['*'],
 

@@ -13,6 +13,7 @@ class ClearanceItem extends Model
     protected $fillable = [
         'clearance_id',
         'org_id',
+        'required_signatory_id',
         'status',
         'approved_by',
         'approved_date',
@@ -43,5 +44,10 @@ class ClearanceItem extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(OrganizationAdmin::class, 'approved_by', 'admin_id');
+    }
+
+    public function requiredSignatory(): BelongsTo
+    {
+        return $this->belongsTo(OrganizationAdmin::class, 'required_signatory_id', 'admin_id');
     }
 }
