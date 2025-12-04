@@ -65,22 +65,26 @@
         <thead>
           <tr>
             <th class="text-center" style="width: 5%">#</th>
-            <th style="width: 25%">Office/Organization</th>
-            <th style="width: 15%">Department</th>
-            <th style="width: 20%">Signatory</th>
-            <th style="width: 15%">Position</th>
-            <th class="text-center" style="width: 15%">Status</th>
-            <th class="text-center" style="width: 10%">Reviewed</th>
+            <th style="width: 20%">Office/Organization</th>
+            <th style="width: 12%">Department</th>
+            <th style="width: 15%">Signatory</th>
+            <th style="width: 12%">Position</th>
+            <th class="text-center" style="width: 12%">Status</th>
+            <th style="width: 15%">Reviewed By</th>
+            <th class="text-center" style="width: 9%">Reviewed</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngIf="clearances.length === 0">
-            <td colspan="7" class="text-center py-4">
-              <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc"></i>
-              <p class="mt-2 text-muted">No clearance requirements found.</p>
-            </td>
-          </tr>
-          <tr *ngFor="let item of clearances; let i = index" [ngClass]="getRowClass(item.status)">
+          @if (clearances.length === 0) {
+            <tr>
+              <td colspan="8" class="text-center py-4">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc"></i>
+                <p class="mt-2 text-muted">No clearance requirements found.</p>
+              </td>
+            </tr>
+          }
+          @for (item of clearances; track item.id; let i = $index) {
+          <tr [ngClass]="getRowClass(item.status)">
             <td class="text-center">{{ i + 1 }}</td>
             <td>
               <strong>{{ item.organization_name }}</strong>
@@ -96,13 +100,24 @@
                 {{ item.status }}
               </span>
             </td>
+            <td>
+              @if (item.reviewed_by_name) {
+                <span class="small">{{ item.reviewed_by_name }}</span>
+              } @else if (item.is_auto_approved) {
+                <span class="text-muted small">Auto-approved</span>
+              } @else {
+                <span class="text-muted small">-</span>
+              }
+            </td>
             <td class="text-center">
-              <span *ngIf="item.reviewed_at" class="text-muted small">
-                {{ formatDate(item.reviewed_at) }}
-              </span>
-              <span *ngIf="!item.reviewed_at" class="text-muted small">-</span>
+              @if (item.reviewed_at) {
+                <span class="text-muted small">{{ formatDate(item.reviewed_at) }}</span>
+              } @else {
+                <span class="text-muted small">-</span>
+              }
             </td>
           </tr>
+          }
         </tbody>
       </table>
     </div>

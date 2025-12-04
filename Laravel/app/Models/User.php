@@ -18,6 +18,11 @@ class User extends Authenticatable
         'username',
         'password_hash',
         'email',
+        // 'user_type' and 'is_active' removed to prevent privilege escalation
+        // These should be set explicitly in controllers, not via mass assignment
+    ];
+
+    protected $guarded = [
         'user_type',
         'is_active',
     ];

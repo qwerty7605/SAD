@@ -44,6 +44,7 @@ class StudentController extends Controller
 
     /**
      * Get student's clearances with ALL signatories per organization
+     * Each clearance item now corresponds to a specific signatory
      */
     public function getClearances(Request $request)
     {
@@ -53,73 +54,47 @@ class StudentController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $clearances = StudentClearance::where('student_id', $user->user_id)
-            ->with(['items.organization.admins', 'items.approver', 'term'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        // Get the most recent clearance for this student
+        $clearance = StudentClearance::where('student_id', $user->user_id)
+            ->with([
+                'items.organization',
+                'items.requiredSignatory',
+                'items.approver',
+                'term'
+            ])
+            ->latest('created_at')
+            ->first();
+
+        if (!$clearance) {
+            return response()->json([]);
+        }
 
         $formattedClearances = [];
 
-        // Get all unique organizations from clearance items
-        $organizationIds = [];
-        foreach ($clearances as $clearance) {
-            foreach ($clearance->items as $item) {
-                if (!in_array($item->org_id, $organizationIds)) {
-                    $organizationIds[] = $item->org_id;
-                }
+        // Each clearance item now represents a specific signatory requirement
+        foreach ($clearance->items as $item) {
+            $signatory = $item->requiredSignatory;
+            $approver = $item->approver;
+
+            // Skip if signatory was deleted (shouldn't happen with proper FK constraints)
+            if (!$signatory) {
+                continue;
             }
-        }
 
-        // Load all organizations with their admins
-        $organizations = \App\Models\Organization::with('admins')
-            ->whereIn('org_id', $organizationIds)
-            ->get();
-
-        foreach ($organizations as $organization) {
-            // Get all admins (signatories) for this organization
-            $admins = $organization->admins;
-
-            // For each admin, check if there's a clearance item
-            foreach ($admins as $admin) {
-                // Find the clearance item for this org and this specific admin
-                $clearanceItem = null;
-                foreach ($clearances as $clearance) {
-                    foreach ($clearance->items as $item) {
-                        if ($item->org_id === $organization->org_id &&
-                            ($item->approved_by === $admin->admin_id || $item->approved_by === null)) {
-                            $clearanceItem = $item;
-                            break 2;
-                        }
-                    }
-                }
-
-                // Determine status - if there's a clearance item with this admin as approver
-                $status = 'Pending';
-                $reviewedAt = null;
-                $itemId = null;
-
-                if ($clearanceItem) {
-                    if ($clearanceItem->approved_by === $admin->admin_id) {
-                        $status = ucfirst($clearanceItem->status);
-                        $reviewedAt = $clearanceItem->approved_date;
-                        $itemId = $clearanceItem->item_id;
-                    }
-                }
-
-                $formattedClearances[] = [
-                    'id' => $itemId,
-                    'organization_id' => $organization->org_id,
-                    'organization_name' => $organization->org_name,
-                    'organization_type' => ucfirst(str_replace('_', ' ', $organization->org_type)),
-                    'department' => $organization->department ?? '',
-                    'signatory_name' => $admin->full_name,
-                    'signatory_position' => $admin->position,
-                    'status' => $status,
-                    'submitted_at' => $clearanceItem->created_at ?? null,
-                    'reviewed_at' => $reviewedAt,
-                    'is_auto_approved' => $clearanceItem->is_auto_approved ?? false,
-                ];
-            }
+            $formattedClearances[] = [
+                'id' => $item->item_id,
+                'organization_id' => $item->organization->org_id,
+                'organization_name' => $item->organization->org_name,
+                'organization_type' => ucfirst(str_replace('_', ' ', $item->organization->org_type)),
+                'department' => $item->organization->department ?? '',
+                'signatory_name' => $signatory->full_name,
+                'signatory_position' => $signatory->position ?? 'Not Specified',
+                'status' => ucwords(str_replace('_', ' ', $item->status)),  // Convert needs_compliance to Needs Compliance
+                'submitted_at' => $item->created_at,
+                'reviewed_at' => $item->approved_date,
+                'is_auto_approved' => $item->is_auto_approved,
+                'reviewed_by_name' => $approver ? $approver->full_name : null,  // More accurate name - handles both approval and needs_compliance
+            ];
         }
 
         return response()->json($formattedClearances);
@@ -152,9 +127,9 @@ class StudentController extends Controller
         }
 
         $items = $clearance->items;
-        $approved = $items->where('status', 'Approved')->count();
-        $pending = $items->where('status', 'Pending')->count();
-        $needsCompliance = $items->where('status', 'Needs Compliance')->count();
+        $approved = $items->where('status', 'approved')->count();
+        $pending = $items->where('status', 'pending')->count();
+        $needsCompliance = $items->where('status', 'needs_compliance')->count();
 
         return response()->json([
             'total' => $items->count(),

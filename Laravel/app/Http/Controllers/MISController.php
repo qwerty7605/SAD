@@ -231,7 +231,7 @@ class MISController extends Controller
         $request->validate([
             'username' => 'required|unique:users,username',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6',
+            'password' => 'required|min:8|regex:/[a-z]/|regex:/[A-Z]/|regex:/[0-9]/',
             'student_number' => 'required|unique:students,student_number',
             'first_name' => 'required',
             'last_name' => 'required',
@@ -249,9 +249,11 @@ class MISController extends Controller
                 'username' => $request->username,
                 'email' => $request->email,
                 'password_hash' => Hash::make($request->password),
-                'user_type' => 'student',
-                'is_active' => true,
             ]);
+            // Set guarded fields explicitly to prevent mass assignment privilege escalation
+            $user->user_type = 'student';
+            $user->is_active = true;
+            $user->save();
 
             // Create student
             $student = Student::create([
@@ -455,17 +457,14 @@ class MISController extends Controller
         $request->validate([
             'username' => 'required|unique:users,username',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6',
+            'password' => 'required|min:8|regex:/[a-z]/|regex:/[A-Z]/|regex:/[0-9]/',
             'org_id' => 'required|exists:organizations,org_id',
             'position' => 'required',
             'full_name' => 'required',
         ]);
 
-        // Check if organization already has an admin
-        $existingAdmin = OrganizationAdmin::where('org_id', $request->org_id)->first();
-        if ($existingAdmin) {
-            return response()->json(['message' => 'This organization already has an admin assigned'], 422);
-        }
+        // Allow multiple admins per organization (e.g., Adviser + Treasurer)
+        // Removed validation that blocked multiple admins
 
         DB::beginTransaction();
         try {
@@ -474,9 +473,11 @@ class MISController extends Controller
                 'username' => $request->username,
                 'email' => $request->email,
                 'password_hash' => Hash::make($request->password),
-                'user_type' => 'org_admin',
-                'is_active' => true,
             ]);
+            // Set guarded fields explicitly to prevent mass assignment privilege escalation
+            $user->user_type = 'org_admin';
+            $user->is_active = true;
+            $user->save();
 
             // Create organization admin
             $orgAdmin = OrganizationAdmin::create([
@@ -666,7 +667,7 @@ class MISController extends Controller
         $request->validate([
             'username' => 'required|unique:users,username',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6',
+            'password' => 'required|min:8|regex:/[a-z]/|regex:/[A-Z]/|regex:/[0-9]/',
             'admin_level' => 'required|in:super_admin,mis_staff',
             'full_name' => 'required',
             'department' => 'required',
@@ -679,9 +680,11 @@ class MISController extends Controller
                 'username' => $request->username,
                 'email' => $request->email,
                 'password_hash' => Hash::make($request->password),
-                'user_type' => 'sys_admin',
-                'is_active' => true,
             ]);
+            // Set guarded fields explicitly to prevent mass assignment privilege escalation
+            $user->user_type = 'sys_admin';
+            $user->is_active = true;
+            $user->save();
 
             // Create system admin
             $sysAdmin = SystemAdmin::create([

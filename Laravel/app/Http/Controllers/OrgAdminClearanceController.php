@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 class OrgAdminClearanceController extends Controller
 {
     /**
-     * Get all clearance items for the authenticated org admin's organization
+     * Get all clearance items assigned to the authenticated org admin (signatory)
      */
     public function index(Request $request)
     {
@@ -21,12 +21,18 @@ class OrgAdminClearanceController extends Controller
             return response()->json(['message' => 'Organization admin not found'], 404);
         }
 
-        // Get clearance items for this organization with student details
-        $clearanceItems = ClearanceItem::where('org_id', $orgAdmin->org_id)
+        // Check if admin is active
+        if (!$orgAdmin->is_active) {
+            return response()->json(['message' => 'Your admin account has been deactivated'], 403);
+        }
+
+        // Get clearance items assigned specifically to this signatory
+        $clearanceItems = ClearanceItem::where('required_signatory_id', $orgAdmin->admin_id)
             ->with([
                 'clearance.student.user',
                 'clearance.term',
-                'organization'
+                'organization',
+                'requiredSignatory'
             ])
             ->get()
             ->map(function ($item) {
@@ -60,7 +66,7 @@ class OrgAdminClearanceController extends Controller
     }
 
     /**
-     * Approve a clearance item
+     * Approve a clearance item (only items assigned to this signatory)
      */
     public function approve(Request $request, $itemId)
     {
@@ -70,12 +76,29 @@ class OrgAdminClearanceController extends Controller
             return response()->json(['message' => 'Organization admin not found'], 404);
         }
 
+        // Check if admin is active
+        if (!$orgAdmin->is_active) {
+            return response()->json(['message' => 'Your admin account has been deactivated'], 403);
+        }
+
+        // Verify this item is assigned to this signatory and check if clearance is locked
         $clearanceItem = ClearanceItem::where('item_id', $itemId)
-            ->where('org_id', $orgAdmin->org_id)
+            ->where('required_signatory_id', $orgAdmin->admin_id)
+            ->with('clearance')
             ->first();
 
         if (!$clearanceItem) {
-            return response()->json(['message' => 'Clearance item not found'], 404);
+            return response()->json(['message' => 'Clearance item not found or not assigned to you'], 404);
+        }
+
+        // Check if clearance is locked
+        if ($clearanceItem->clearance->is_locked) {
+            return response()->json(['message' => 'This clearance has been locked and cannot be modified'], 403);
+        }
+
+        // Check if already approved
+        if ($clearanceItem->status === 'approved') {
+            return response()->json(['message' => 'This clearance item has already been approved'], 400);
         }
 
         $clearanceItem->update([
@@ -84,14 +107,27 @@ class OrgAdminClearanceController extends Controller
             'approved_date' => now(),
         ]);
 
+        // Check if all items are approved to update overall status
+        $allItemsApproved = $clearanceItem->clearance->items()
+            ->where('status', '!=', 'approved')
+            ->count() === 0;
+
+        if ($allItemsApproved) {
+            $clearanceItem->clearance->update([
+                'overall_status' => 'approved',
+                'approved_date' => now(),
+            ]);
+        }
+
         return response()->json([
             'message' => 'Clearance approved successfully',
-            'clearance_item' => $clearanceItem
+            'clearance_item' => $clearanceItem,
+            'overall_status_updated' => $allItemsApproved
         ]);
     }
 
     /**
-     * Mark clearance item as needs compliance
+     * Mark clearance item as needs compliance (only items assigned to this signatory)
      */
     public function needsCompliance(Request $request, $itemId)
     {
@@ -101,18 +137,35 @@ class OrgAdminClearanceController extends Controller
             return response()->json(['message' => 'Organization admin not found'], 404);
         }
 
+        // Check if admin is active
+        if (!$orgAdmin->is_active) {
+            return response()->json(['message' => 'Your admin account has been deactivated'], 403);
+        }
+
+        // Verify this item is assigned to this signatory
         $clearanceItem = ClearanceItem::where('item_id', $itemId)
-            ->where('org_id', $orgAdmin->org_id)
+            ->where('required_signatory_id', $orgAdmin->admin_id)
+            ->with('clearance')
             ->first();
 
         if (!$clearanceItem) {
-            return response()->json(['message' => 'Clearance item not found'], 404);
+            return response()->json(['message' => 'Clearance item not found or not assigned to you'], 404);
+        }
+
+        // Check if clearance is locked
+        if ($clearanceItem->clearance->is_locked) {
+            return response()->json(['message' => 'This clearance has been locked and cannot be modified'], 403);
         }
 
         $clearanceItem->update([
             'status' => 'needs_compliance',
-            'approved_by' => $orgAdmin->admin_id,
-            'approved_date' => null,
+            'approved_by' => $orgAdmin->admin_id,  // Track who marked it as needs compliance
+            'approved_date' => now(),  // Track when this action was taken
+        ]);
+
+        // Update overall status to incomplete
+        $clearanceItem->clearance->update([
+            'overall_status' => 'incomplete',
         ]);
 
         return response()->json([
@@ -122,7 +175,7 @@ class OrgAdminClearanceController extends Controller
     }
 
     /**
-     * Bulk approve clearance items
+     * Bulk approve clearance items (only items assigned to this signatory)
      */
     public function bulkApprove(Request $request)
     {
@@ -137,22 +190,61 @@ class OrgAdminClearanceController extends Controller
             return response()->json(['message' => 'Organization admin not found'], 404);
         }
 
-        $updated = ClearanceItem::whereIn('item_id', $request->item_ids)
-            ->where('org_id', $orgAdmin->org_id)
-            ->update([
-                'status' => 'approved',
-                'approved_by' => $orgAdmin->admin_id,
-                'approved_date' => now(),
-            ]);
+        // Check if admin is active
+        if (!$orgAdmin->is_active) {
+            return response()->json(['message' => 'Your admin account has been deactivated'], 403);
+        }
 
-        return response()->json([
-            'message' => "Successfully approved {$updated} clearance(s)",
-            'updated_count' => $updated
-        ]);
+        // Use transaction for bulk operations
+        DB::beginTransaction();
+        try {
+            // Only approve items assigned to this signatory, not locked, and not already approved
+            $updated = ClearanceItem::whereIn('item_id', $request->item_ids)
+                ->where('required_signatory_id', $orgAdmin->admin_id)
+                ->where('status', '!=', 'approved')
+                ->whereHas('clearance', function($q) {
+                    $q->where('is_locked', false);
+                })
+                ->update([
+                    'status' => 'approved',
+                    'approved_by' => $orgAdmin->admin_id,
+                    'approved_date' => now(),
+                ]);
+
+            // Update overall status for affected clearances
+            $affectedClearanceIds = ClearanceItem::whereIn('item_id', $request->item_ids)
+                ->pluck('clearance_id')
+                ->unique();
+
+            foreach ($affectedClearanceIds as $clearanceId) {
+                $clearance = \App\Models\StudentClearance::find($clearanceId);
+                $allItemsApproved = $clearance->items()->where('status', '!=', 'approved')->count() === 0;
+
+                if ($allItemsApproved) {
+                    $clearance->update([
+                        'overall_status' => 'approved',
+                        'approved_date' => now(),
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => "Successfully approved {$updated} clearance(s)",
+                'updated_count' => $updated
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Bulk approval failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
-     * Get clearance statistics for the org admin's organization
+     * Get clearance statistics for items assigned to this signatory
      */
     public function statistics(Request $request)
     {
@@ -162,7 +254,8 @@ class OrgAdminClearanceController extends Controller
             return response()->json(['message' => 'Organization admin not found'], 404);
         }
 
-        $stats = ClearanceItem::where('org_id', $orgAdmin->org_id)
+        // Get statistics only for items assigned to this signatory
+        $stats = ClearanceItem::where('required_signatory_id', $orgAdmin->admin_id)
             ->select('status', DB::raw('count(*) as count'))
             ->groupBy('status')
             ->get()
